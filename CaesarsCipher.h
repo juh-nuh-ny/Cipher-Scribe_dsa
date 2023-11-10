@@ -82,18 +82,25 @@ Point* encrypt(Point *head, int key)
     while(temp != NULL){
         char pick = temp->pointOne;
         char encrypted = pick;
+
+        // Reduced key for alphabet characters, subtracts all sets of 26 shifts, keeps just the excess
+        int reducedKeyAlphabets = key % ALPHABET_SIZE;
+        // Reduced key for numeric characters, subtracts all sets of 10 shifts, keeps just the excess
+        int reducedKeyNumbers = key % NUMBER_SIZE;
+
         if ((pick >= UPPER_A && pick <= UPPER_Z) || (pick >= LOWER_A && pick <= LOWER_Z)){
             char base = (pick >= LOWER_A && pick <= LOWER_Z) ? LOWER_A : UPPER_A;
-            encrypted = base + (pick - base + key + ALPHABET_SIZE) % ALPHABET_SIZE;
+            encrypted = base + (pick - base + reducedKeyAlphabets) % ALPHABET_SIZE;
         }
         else if (pick >= NUMBER_0 && pick <= NUMBER_9){
-            encrypted = NUMBER_0 + (pick - NUMBER_0 + key + NUMBER_SIZE) % NUMBER_SIZE;
+            encrypted = NUMBER_0 + (pick - NUMBER_0 + reducedKeyNumbers) % NUMBER_SIZE;
         }
         temp->pointTwo = encrypted;
         temp = temp->next;
     }
     return head;
 }
+
 
 //takes in an encrypted string and shifts the value by negative key
 Point* decrypt(Point* head, int key)
