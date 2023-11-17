@@ -103,7 +103,7 @@ int Columnar(void)
 
     printf("Enter the plain-text:");
     scanf(" %[^\n]",text);
-    printf("Enter the len_k(only alphabets):");
+    printf("Enter the key(only alphabets):");
     scanf("%s",key);
 
     if (!isAlphabetic(key)) 
@@ -159,7 +159,7 @@ int Columnar(void)
         printf("The encrypted text is: ");
         for(int i=0;i<len_k;i++)
             display(heads[order[i]]);
-        
+        printf("\n");
         //freeing memory
         for(int i=0;i<len_k;i++)
             emptyList(heads[i]);
@@ -203,6 +203,7 @@ int Columnar(void)
         printf("The decrypted text: ");
         for(int i=0;i<len_k;i++)
             display(heads[i]);
+        printf("\n");
         
         //freeing memory
         for(int i=0;i<len_k;i++)
