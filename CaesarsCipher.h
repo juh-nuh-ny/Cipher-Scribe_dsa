@@ -102,12 +102,37 @@ Point* encrypt(Point *head, int key)
 }
 
 
+// //takes in an encrypted string and shifts the value by negative key
+// Point* decrypt(Point* head, int key)
+// {
+//     int newkey = -key;
+//     return encrypt(head, newkey);
+// }
+
+
 //takes in an encrypted string and shifts the value by negative key
-Point* decrypt(Point* head, int key)
+Point* decrypt(Point* head, int keyminus)
 {
-    int newkey = -key;
-    return encrypt(head, newkey);
+    Point* temp = head;
+    while(temp != NULL){
+        char pick = temp->pointOne;
+        char decrypted = pick;
+        int reducedKeyAlphabetsminus = (ALPHABET_SIZE - (keyminus % ALPHABET_SIZE)) % ALPHABET_SIZE;
+        int reducedKeyNumbersminus = (NUMBER_SIZE - (keyminus % NUMBER_SIZE)) % NUMBER_SIZE;
+
+        if ((pick >= UPPER_A && pick <= UPPER_Z) || (pick >= LOWER_A && pick <= LOWER_Z)){
+            char base = (pick >= LOWER_A && pick <= LOWER_Z) ? LOWER_A : UPPER_A;
+            decrypted = base + (pick - base + reducedKeyAlphabetsminus) % ALPHABET_SIZE;
+        }
+        else if (pick >= NUMBER_0 && pick <= NUMBER_9){
+            decrypted = NUMBER_0 + (pick - NUMBER_0 + reducedKeyNumbersminus) % NUMBER_SIZE;
+        }
+        temp->pointTwo = decrypted;
+        temp = temp->next;
+    }
+    return head;
 }
+
 
 //once functionality is done, clears memory
 void clearMemory(Point* head)

@@ -1,224 +1,129 @@
-//TRANSPOSITION COLUMNAR CIPHER
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
-#include<math.h>
-#include<ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #ifndef COLUMNAR_CIPHER_H
 #define COLUMNAR_CIPHER_H
 
-#define MAX_TEXT_LENGTH 500
-#define MAX_KEY_LENGTH 500
-#define ENCRYPT 1
-#define DECRYPT 2
+#define MAX_ROWS 100
+#define MAX_COLS 100
 
-//structure for the nodes to store column wise linked list
-struct Node {
-    char data;
-    struct Node* link;
-}typedef node;
+typedef struct {
+    char text[MAX_ROWS][MAX_COLS];
+    int length;
+} EncryptedText;
 
-//create a node of the lenked list
-node* create(char a)
-{
-    node* newNode = (node*)malloc(sizeof(node));
-    newNode->data = a;
-    newNode->link = NULL;
-    return newNode;
-}
+typedef struct {
+    char text[MAX_ROWS][MAX_COLS];
+    int length;
+} DecryptedText;
 
-//creation of a linked list by insert at the end 
-node* append(node* head,char chr)
-{
-    node* new=create(chr);
-    if(new == NULL)
-    {
-        printf("Memory allocation falied");
-        return NULL;    
-    }
-    if(head==NULL)
-        head=new;
-    else
-    {
-        node* temp=head;
-        while(temp->link !=NULL)
-            temp=temp->link;
-        temp->link=new;
-    }
-    return head;
-}
+typedef enum {
+    ENCRYPT,
+    DECRYPT
+} CipherMode;
 
-//printing the linked list
-void display(node* head)
-{
-    node* p=head;;
-    while(p!=NULL)
-    {   
-        printf("%c",p->data);
-        p=p->link;
-    }
-}  
+void columnarCipher(const char *inputText, const char *key, char *outputText, CipherMode mode) {
+    int keyLength = strlen(key);
+    int textLength = strlen(inputText);
 
-void emptyList(node* head) 
-{
-    node* p=head;
-    while (p!=NULL) 
-    {
-        node* temp = p;
-        p = p->link;
-        free(temp);
-    }
-}
+    int numRows = textLength / keyLength;
+    if (textLength % keyLength != 0)
+        numRows++;
 
+    char matrix[MAX_ROWS][MAX_COLS];
+    int index = 0;
 
-//convert the key to uppercase using toupper function for easier usage
-void UpperCase(char* key,int len)
-{
-    for(int i=0;i<len;i++)
-        key[i]=toupper(key[i]);
-}
-
-//called in the qsort function to sort they key according to alphabetical order
-int compareChar(const void *a, const void *b) 
-{
-    return ((*(char*)a) - (*(char*)b));
-}
-
-int isAlphabetic(const char* str) 
-{
-    for (int i=0;str[i]!='\0';i++) 
-    {
-        if (!isalpha(str[i])) 
-            return 0;  // Not alphabetic
-    }
-    return 1;  // Alphabetic
-}
-
-
-int Columnar(void)
-{
-    char text[MAX_TEXT_LENGTH],key[MAX_KEY_LENGTH];
-    int ch;
-
-    printf("Enter the plain-text:");
-    scanf(" %[^\n]",text);
-    printf("Enter the key(only alphabets):");
-    scanf("%s",key);
-
-    if (!isAlphabetic(key)) 
-    {
-        printf("Key should only contain alphabetic characters.\n");
-        return 1;  // Exit with an error code
+    for (int i = 0; i < numRows; i++) {
+        for (int j = 0; j < keyLength; j++) {
+            if (index < textLength) {
+                matrix[i][j] = inputText[index];
+                index++;
+            } else {
+                matrix[i][j] = ' ';
+            }
+        }
     }
 
-    int len_k=strlen(key);
-    int len_txt=strlen(text);
-    int row=(int)ceil((double)len_txt/len_k);
-    UpperCase(key,len_k);
-    
-    printf("1]Encrypt\n2]Decrypt\nEnter the choice:");
-    scanf("%d",&ch);
+    int columnOrder[MAX_COLS];
+    int visited[MAX_COLS] = {0};
 
-    switch(ch)
-{
-    case ENCRYPT:
-    {
-        node* heads[len_k];
+    for (int i = 0; i < keyLength; i++) {
+        int min = 127;
+        int minIndex = -1;
 
-        //linked lists to store the columns mapped to their characters' in the key
-        for(int i=0;i<len_k;i++)
-        {   heads[i]=NULL;
-            int j=i;
-            while(j<len_txt)
-            {
-                heads[i] = append(heads[i],text[j]);
-                j=j+(len_k);
+        for (int j = 0; j < keyLength; j++) {
+            if (visited[j] == 0 && key[j] < min) {
+                min = key[j];
+                minIndex = j;
             }
         }
 
-        //creating an array-order to store the position of the key characters in their alphabetical order
-        int order[len_k];
-        for (int i=0;i<len_k;i++) 
-            order[i] = i;
-
-        //change the order array based on the alphabetical order of key
-        for (int k = 0; k < len_k - 1; k++) 
-        {   int tmp = k;
-            for (int j=k+1; j < len_k; j++) 
-            {
-                if (key[order[j]] < key[order[tmp]]) 
-                tmp = j;
-            }
-            int temp = order[k];
-            order[k] = order[tmp];
-            order[tmp] = temp;
-        }
-
-        //printing the encrypted text according to the alphabetical order of keys
-        printf("The encrypted text is: ");
-        for(int i=0;i<len_k;i++)
-            display(heads[order[i]]);
-        printf("\n");
-        //freeing memory
-        for(int i=0;i<len_k;i++)
-            emptyList(heads[i]);
-        
+        visited[minIndex] = 1;
+        columnOrder[i] = minIndex;
     }
-    break;
-    case DECRYPT:
-    {
-        node* heads[len_k];
-        int order[len_k];
-        char dup_key[len_k];
 
-        //dup_key is a dulicate of the key to manipulate it
-        strcpy(dup_key,key);
-
-        //rearrange the key based on alphabetical order
-        qsort(dup_key,len_k,1,compareChar);
-
-        //store the order of the keys according to the original order
-        for (int i=0;i<len_k;i++) 
-        {   
-            for (int j=0;j<len_k;j++) 
-            {
-                if (key[i]== dup_key[j]) 
-                    order[i]=j;
-            }   
+    index = 0;
+    if (mode == ENCRYPT) {
+        for (int i = 0; i < keyLength; i++) {
+            int col = columnOrder[i];
+            for (int j = 0; j < numRows; j++) {
+                outputText[index++] = matrix[j][col];
+            }
         }
-        
-        //linked list to store the deciphered text
-        for(int i=0;i<len_k;i++)
-        {   
-            heads[i]=NULL;
-            for(int j=0;j<len_k;j++)
-            {   
-                int temp=(order[j]*len_k)+i;
-                heads[i] = append(heads[i],text[temp]);
+    } else if (mode == DECRYPT) {
+        char decryptedMatrix[MAX_ROWS][MAX_COLS];
+        index = 0;
+        for (int i = 0; i < keyLength; i++) {
+            int col = columnOrder[i];
+            for (int j = 0; j < numRows; j++) {
+                decryptedMatrix[j][col] = inputText[index++];
             }
         }
 
-        //print the decrypted message by reading each column
-        printf("The decrypted text: ");
-        for(int i=0;i<len_k;i++)
-            display(heads[i]);
-        printf("\n");
-        
-        //freeing memory
-        for(int i=0;i<len_k;i++)
-            emptyList(heads[i]);
-        
+        index = 0;
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < keyLength; j++) {
+                outputText[index++] = decryptedMatrix[i][j];
+            }
+        }
     }
-    break;
-    default:
-        printf("invalid");
-    break;
+}
+
+int Columnar(void) {
+    char plaintext[MAX_ROWS * MAX_COLS];
+    char key[MAX_COLS];
+
+    printf("Enter plaintext: ");
+    scanf(" %[^\n]s", plaintext);
+
+    printf("Enter key: ");
+    scanf("%s", key);
+
+     int choice;
+    printf("Choose an option:\n");
+    printf("1. Encrypt\n");
+    printf("2. Decrypt\n");
+    scanf("%d", &choice);
+
+    char outputText[MAX_ROWS * MAX_COLS];
+
+    switch (choice) {
+        case 1:
+            columnarCipher(plaintext, key, outputText, ENCRYPT);
+            printf("Encrypted Text: %s\n", outputText);
+            break;
+        case 2:
+            columnarCipher(plaintext, key, outputText, DECRYPT);
+            printf("Decrypted Text: %s\n", outputText);
+            break;
+        default:
+            printf("Invalid choice\n");
+            break;
     }
 
 
-return 0;
-
+    return 0;
 }
 
 #endif /* COLUMNAR_CIPHER_H */
